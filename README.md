@@ -1,2 +1,0 @@
-# bot_discord
-teste
