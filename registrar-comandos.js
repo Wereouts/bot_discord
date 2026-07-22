@@ -34,6 +34,10 @@ const guildIds = [
 const rest = new REST({ version: '10' })
     .setToken(process.env.DISCORD_TOKEN);
 
+/**
+ * Registra o comando /solicitar em cada servidor configurado.
+ * Em caso de falha, mantém o erro visível no console e sinaliza a saída do processo.
+ */
 async function registrarComandos() {
     try {
         console.log('Registrando o comando /solicitar...');

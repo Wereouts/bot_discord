@@ -20,6 +20,10 @@ const CLEANUP_INTERVAL_MS = 30_000;
 const INTERACTION_RETENTION_MS = 30_000;
 const SEND_RETENTION_MS = 60_000;
 
+/**
+ * Converte uma data brasileira, com ou sem separadores, em uma data UTC válida.
+ * Retorna null para valores impossíveis ou que não tenham oito dígitos.
+ */
 function interpretarDataBrasileira(valor) {
     const numeros = valor.replace(/\D/g, '');
     if (numeros.length !== 8) return null;
@@ -40,6 +44,7 @@ function interpretarDataBrasileira(valor) {
     return data;
 }
 
+/** Retorna a data civil atual de São Paulo representada à meia-noite em UTC. */
 function obterHojeEmSaoPaulo() {
     const partes = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'America/Sao_Paulo',
@@ -52,6 +57,10 @@ function obterHojeEmSaoPaulo() {
     return new Date(Date.UTC(valor('year'), valor('month') - 1, valor('day')));
 }
 
+/**
+ * Calcula a data mínima de uma mensalidade: o mesmo dia do mês seguinte mais um dia.
+ * Ajusta automaticamente meses que não possuem o dia original (por exemplo, dia 31).
+ */
 function obterDataMinimaMensalidade(hoje) {
     const ano = hoje.getUTCFullYear();
     const mesSeguinte = hoje.getUTCMonth() + 1;
@@ -66,12 +75,14 @@ function obterDataMinimaMensalidade(hoje) {
     return mesmoDiaNoMesSeguinte;
 }
 
+/** Formata uma data UTC como DD/MM/AAAA. */
 function formatarDataBrasileira(data) {
     const dia = String(data.getUTCDate()).padStart(2, '0');
     const mes = String(data.getUTCMonth() + 1).padStart(2, '0');
     return `${dia}/${mes}/${data.getUTCFullYear()}`;
 }
 
+/** Remove dos caches as interações e os envios que já passaram do prazo de retenção. */
 function cleanupCaches() {
     const agora = Date.now();
 
@@ -90,10 +101,14 @@ function cleanupCaches() {
 
 const cleanupInterval = setInterval(cleanupCaches, CLEANUP_INTERVAL_MS);
 cleanupInterval.unref();
+
+// Confirma no log de depuração que o cliente concluiu a conexão com o Discord.
 client.once(Events.ClientReady, bot => {
     debug('Bot conectado como', bot.user.tag);
 });
 
+// Fluxo principal: abre o menu, exibe o modal selecionado, valida os dados e envia
+// a solicitação ao canal da equipe responsável.
 client.on('interactionCreate', async interaction => {
     try {
         if (processedInteractions.has(interaction.id)) {
@@ -103,6 +118,7 @@ client.on('interactionCreate', async interaction => {
 
         processedInteractions.set(interaction.id, Date.now());
 
+        // Etapa 1: o comando /solicitar apresenta as opções permitidas neste canal.
         if (
             interaction.isChatInputCommand() &&
             interaction.commandName === 'solicitar'
@@ -144,6 +160,7 @@ client.on('interactionCreate', async interaction => {
             return;
         }
 
+        // Etapa 2: a escolha do menu é transformada no formulário correspondente.
         if (
             interaction.isStringSelectMenu() &&
             interaction.customId === 'menu_solicitacao'
@@ -168,6 +185,7 @@ client.on('interactionCreate', async interaction => {
             return;
         }
 
+        // Etapa 3: o formulário enviado é validado, formatado e encaminhado ao suporte.
         if (
             interaction.isModalSubmit() &&
             interaction.customId.startsWith('modal_')
@@ -233,6 +251,7 @@ client.on('interactionCreate', async interaction => {
             const embed = new EmbedBuilder()
                 .setDescription(mensagemSolicitacao);
 
+            // O hash impede que o mesmo conteúdo seja enviado duas vezes em sequência.
             const payloadFingerprint = crypto
                 .createHash('md5')
                 .update(JSON.stringify({ channel: destino.channelId, tipo: interaction.customId, autor: interaction.user.id, embed }))

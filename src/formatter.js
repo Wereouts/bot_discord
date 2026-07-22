@@ -1,5 +1,6 @@
 const { obterCampo, formatarEquipamentos } = require('./utils');
 
+/** Normaliza uma data com oito dígitos para o formato brasileiro DD/MM/AAAA. */
 function formatarData(data) {
     const somenteNumeros = data.replace(/\D/g, '');
 
@@ -10,6 +11,10 @@ function formatarData(data) {
     return data;
 }
 
+/**
+ * Lê e higieniza os campos do modal e monta a mensagem Markdown enviada ao suporte.
+ * Retorna null caso o identificador do modal não seja reconhecido.
+ */
 function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
     if (tipo === 'modal_licenca_facial') {
         const acaoSelecionada = interaction.fields.getCheckboxGroup('acao_licenca')[0];

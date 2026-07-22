@@ -11,6 +11,10 @@ const {
     TextInputStyle
 } = require('discord.js');
 
+/**
+ * Cria um campo de texto padronizado para os formulários do bot.
+ * Os limites e a obrigatoriedade podem ser ajustados para cada solicitação.
+ */
 function criarCampo({
     id,
     titulo,
@@ -35,12 +39,16 @@ function criarCampo({
     return campo;
 }
 
+/** Agrupa campos de texto em linhas e os adiciona ao modal informado. */
 function adicionarCamposAoModal(modal, campos) {
     const linhas = campos.map(campo => new ActionRowBuilder().addComponents(campo));
     modal.addComponents(...linhas);
     return modal;
 }
 
+/**
+ * Adiciona a confirmação obrigatória de que a case relacionada foi atualizada.
+ */
 function adicionarStatusAtualizacaoCase(modal) {
     const opcaoAtualizada = new CheckboxGroupOptionBuilder()
         .setLabel('Confirmo que a case foi atualizada')
@@ -62,6 +70,10 @@ function adicionarStatusAtualizacaoCase(modal) {
     return modal;
 }
 
+/**
+ * Calcula e formata a primeira data aceita para mensalidade: um mês e um dia
+ * após a data atual em São Paulo.
+ */
 function obterDataMinimaMensalidadeFormatada() {
     const partes = new Intl.DateTimeFormat('en-CA', {
         timeZone: 'America/Sao_Paulo',
@@ -86,6 +98,10 @@ function obterDataMinimaMensalidadeFormatada() {
     return `${dia}/${mes}/${dataMinima.getUTCFullYear()}`;
 }
 
+/**
+ * Monta o formulário correspondente ao tipo selecionado no menu.
+ * Retorna null quando o tipo não pertence a nenhuma solicitação conhecida.
+ */
 function criarModal(tipo) {
     switch (tipo) {
         case 'licenca_facial': {

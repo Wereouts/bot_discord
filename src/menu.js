@@ -1,5 +1,9 @@
 const { debug } = require('./utils');
 
+/**
+ * Escolhe as opções exibidas no menu conforme o canal ou servidor de origem.
+ * Quando não há uma configuração específica, apresenta as opções de iD Cloud.
+ */
 function obterOpcoesDoCanal(interaction, ENV) {
     const canalId = interaction.channelId;
     const guildId = interaction.guildId;

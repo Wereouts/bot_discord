@@ -1,3 +1,4 @@
+// Carrega e valida as variáveis usadas para autenticação e roteamento das solicitações.
 require('dotenv').config();
 
 const variaveisObrigatorias = [
@@ -12,6 +13,7 @@ for (const variavel of variaveisObrigatorias) {
     }
 }
 
+// Centraliza os valores tratados para que os demais módulos não acessem o ambiente diretamente.
 const ENV = {
     CHANNEL_ID_LICENCA: (process.env.CHANNEL_ID_LICENCA || '').trim(),
     SUPORTE_LICENCA_ID: (process.env.SUPORTE_LICENCA_ID || '').trim(),

@@ -1,7 +1,9 @@
+/** Retorna se as mensagens de diagnóstico foram habilitadas por DEBUG=true. */
 function isDebugMode() {
     return process.env.DEBUG === 'true';
 }
 
+/** Escreve uma mensagem com data/hora no console somente durante o modo de depuração. */
 function debug(...args) {
     if (!isDebugMode()) {
         return;
@@ -10,6 +12,10 @@ function debug(...args) {
     console.log(new Date().toISOString(), ...args);
 }
 
+/**
+ * Responde a uma interação do Discord sem propagar erros de interação expirada ou já respondida.
+ * Retorna o resultado da API ou null quando o envio falha.
+ */
 async function safeReply(interaction, options) {
     try {
         return await interaction.reply(options);
@@ -19,6 +25,7 @@ async function safeReply(interaction, options) {
     }
 }
 
+/** Exibe um modal com tratamento seguro de erros e retorna null em caso de falha. */
 async function safeShowModal(interaction, modal) {
     try {
         return await interaction.showModal(modal);
@@ -28,6 +35,7 @@ async function safeShowModal(interaction, modal) {
     }
 }
 
+/** Adia a resposta de uma interação com tratamento seguro de erros. */
 async function safeDeferReply(interaction, options) {
     try {
         return await interaction.deferReply(options);
@@ -37,6 +45,9 @@ async function safeDeferReply(interaction, options) {
     }
 }
 
+/**
+ * Remove espaços externos e neutraliza menções que poderiam notificar usuários ou cargos.
+ */
 function limparTexto(texto) {
     if (!texto) {
         return '';
@@ -49,10 +60,12 @@ function limparTexto(texto) {
         .trim();
 }
 
+/** Obtém um campo de texto do modal e devolve seu conteúdo já higienizado. */
 function obterCampo(interaction, id) {
     return limparTexto(interaction.fields.getTextInputValue(id));
 }
 
+/** Converte uma lista de equipamentos, um por linha, em uma lista Markdown. */
 function formatarEquipamentos(texto) {
     const equipamentos = texto
         .split('\n')

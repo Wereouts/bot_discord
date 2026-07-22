@@ -1,3 +1,7 @@
+/**
+ * Localiza o canal de destino pela API do Discord.
+ * Se o canal configurado não estiver disponível, tenta usar o primeiro canal de texto da guilda.
+ */
 async function resolverCanalDestino(client, destino) {
     if (destino.channelId) {
         try {
@@ -22,6 +26,9 @@ async function resolverCanalDestino(client, destino) {
     }
 }
 
+/**
+ * Mapeia o identificador do modal para a área, guilda e canal que receberão a solicitação.
+ */
 function obterDestinoPorTipo(tipo, ENV) {
     switch (tipo) {
         case 'modal_licenca_facial':
