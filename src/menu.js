@@ -6,12 +6,36 @@ function obterOpcoesDoCanal(interaction, ENV) {
 
     debug('Building menu for channel:', canalId, 'guild:', guildId);
 
+    if (canalId && canalId === ENV.CHANNEL_ID_LICENCA) {
+        debug('Menu: matched Licença Facial');
+        return [
+            {
+                label: 'Solicitação de licença facial',
+                description: 'Envio, troca ou cancelamento de licença',
+                value: 'licenca_facial',
+                emoji: '🪪'
+            }
+        ];
+    }
+
     if (
         (canalId && canalId === ENV.CHANNEL_ID_ACESSO_NUVEM) ||
         (guildId && guildId === ENV.GUILD_ID_ACESSO_NUVEM)
     ) {
         debug('Menu: matched Acesso Nuvem');
         return [
+            {
+                label: 'Adicionar equipamento',
+                description: 'Adicionar equipamento ao Acesso Nuvem',
+                value: 'adicao_equipamento_acesso_nuvem',
+                emoji: '➕'
+            },
+            {
+                label: 'Remover equipamento',
+                description: 'Remover equipamento do Acesso Nuvem',
+                value: 'remocao_equipamento_acesso_nuvem',
+                emoji: '➖'
+            },
             {
                 label: 'Renovação de registro',
                 description: 'Renovação de registro',
@@ -33,6 +57,18 @@ function obterOpcoesDoCanal(interaction, ENV) {
     ) {
         debug('Menu: matched Comunicador');
         return [
+            {
+                label: 'Adicionar equipamento',
+                description: 'Adicionar equipamento no Comunicador',
+                value: 'adicao_equipamento_comunicador',
+                emoji: '➕'
+            },
+            {
+                label: 'Cancelar equipamento',
+                description: 'Cancelar equipamento no Comunicador',
+                value: 'cancelamento_equipamento_comunicador',
+                emoji: '➖'
+            },
             {
                 label: 'Reinício de agente de comunicação',
                 description: 'Reinício de agente de comunicação',

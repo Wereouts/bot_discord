@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { Client, Events, GatewayIntentBits, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const crypto = require('crypto');
 
 const { ENV } = require('./config');
@@ -20,6 +20,58 @@ const CLEANUP_INTERVAL_MS = 30_000;
 const INTERACTION_RETENTION_MS = 30_000;
 const SEND_RETENTION_MS = 60_000;
 
+function interpretarDataBrasileira(valor) {
+    const numeros = valor.replace(/\D/g, '');
+    if (numeros.length !== 8) return null;
+
+    const dia = Number(numeros.slice(0, 2));
+    const mes = Number(numeros.slice(2, 4));
+    const ano = Number(numeros.slice(4));
+    const data = new Date(Date.UTC(ano, mes - 1, dia));
+
+    if (
+        data.getUTCFullYear() !== ano ||
+        data.getUTCMonth() !== mes - 1 ||
+        data.getUTCDate() !== dia
+    ) {
+        return null;
+    }
+
+    return data;
+}
+
+function obterHojeEmSaoPaulo() {
+    const partes = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).formatToParts(new Date());
+    const valor = tipo => Number(partes.find(parte => parte.type === tipo).value);
+
+    return new Date(Date.UTC(valor('year'), valor('month') - 1, valor('day')));
+}
+
+function obterDataMinimaMensalidade(hoje) {
+    const ano = hoje.getUTCFullYear();
+    const mesSeguinte = hoje.getUTCMonth() + 1;
+    const ultimoDiaDoMes = new Date(Date.UTC(ano, mesSeguinte + 1, 0)).getUTCDate();
+    const mesmoDiaNoMesSeguinte = new Date(Date.UTC(
+        ano,
+        mesSeguinte,
+        Math.min(hoje.getUTCDate(), ultimoDiaDoMes)
+    ));
+
+    mesmoDiaNoMesSeguinte.setUTCDate(mesmoDiaNoMesSeguinte.getUTCDate() + 1);
+    return mesmoDiaNoMesSeguinte;
+}
+
+function formatarDataBrasileira(data) {
+    const dia = String(data.getUTCDate()).padStart(2, '0');
+    const mes = String(data.getUTCMonth() + 1).padStart(2, '0');
+    return `${dia}/${mes}/${data.getUTCFullYear()}`;
+}
+
 function cleanupCaches() {
     const agora = Date.now();
 
@@ -38,7 +90,7 @@ function cleanupCaches() {
 
 const cleanupInterval = setInterval(cleanupCaches, CLEANUP_INTERVAL_MS);
 cleanupInterval.unref();
-client.once('ready', bot => {
+client.once(Events.ClientReady, bot => {
     debug('Bot conectado como', bot.user.tag);
 });
 
@@ -130,6 +182,27 @@ client.on('interactionCreate', async interaction => {
                 return;
             }
 
+            if (interaction.customId === 'modal_renovacao_registro') {
+                const dataValidade = interpretarDataBrasileira(
+                    interaction.fields.getTextInputValue('data_validade')
+                );
+                const tipoRegistro = interaction.fields.getStringSelectValues('tipo_registro')[0];
+
+                if (!dataValidade) {
+                    await interaction.editReply('A solicitação não foi enviada. Informe uma data válida usando **DDMMAAAA** ou **DD/MM/AAAA**.');
+                    return;
+                }
+
+                if (tipoRegistro === 'Mensalidade') {
+                    const dataMinima = obterDataMinimaMensalidade(obterHojeEmSaoPaulo());
+
+                    if (dataValidade < dataMinima) {
+                        await interaction.editReply(`A solicitação não foi enviada. Para **Mensalidade**, a data mínima permitida é **${formatarDataBrasileira(dataMinima)}**.`);
+                        return;
+                    }
+                }
+            }
+
             const destino = obterDestinoPorTipo(interaction.customId, ENV);
             const canalId = destino.channelId;
 
@@ -148,15 +221,21 @@ client.on('interactionCreate', async interaction => {
                 return;
             }
 
-            const mensagem = criarMensagemSolicitacao(interaction, interaction.customId, process.env.SUPORTE_ROLE_ID);
-            if (!mensagem) {
+            const suporteRoleId = interaction.customId === 'modal_licenca_facial'
+                ? ENV.SUPORTE_LICENCA_ID
+                : process.env.SUPORTE_ROLE_ID;
+            const mensagemSolicitacao = criarMensagemSolicitacao(interaction, interaction.customId, suporteRoleId);
+            if (!mensagemSolicitacao) {
                 await interaction.editReply('Não foi possível identificar o tipo da solicitação.');
                 return;
             }
 
+            const embed = new EmbedBuilder()
+                .setDescription(mensagemSolicitacao);
+
             const payloadFingerprint = crypto
                 .createHash('md5')
-                .update(JSON.stringify({ channel: destino.channelId, tipo: interaction.customId, autor: interaction.user.id, mensagem }))
+                .update(JSON.stringify({ channel: destino.channelId, tipo: interaction.customId, autor: interaction.user.id, embed }))
                 .digest('hex');
 
             const sendKey = `${destino.channelId}:${payloadFingerprint}`;
@@ -170,9 +249,10 @@ client.on('interactionCreate', async interaction => {
             debug('Registered send fingerprint:', sendKey);
 
             const mensagemEnviada = await canal.send({
-                content: mensagem,
+                content: `<@&${suporteRoleId}>`,
+                embeds: [embed],
                 allowedMentions: {
-                    roles: [process.env.SUPORTE_ROLE_ID],
+                    roles: [suporteRoleId],
                     users: [interaction.user.id]
                 }
             });

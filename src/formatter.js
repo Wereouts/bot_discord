@@ -1,10 +1,52 @@
 const { obterCampo, formatarEquipamentos } = require('./utils');
 
+function formatarData(data) {
+    const somenteNumeros = data.replace(/\D/g, '');
+
+    if (somenteNumeros.length === 8) {
+        return `${somenteNumeros.slice(0, 2)}/${somenteNumeros.slice(2, 4)}/${somenteNumeros.slice(4)}`;
+    }
+
+    return data;
+}
+
 function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
+    if (tipo === 'modal_licenca_facial') {
+        const acaoSelecionada = interaction.fields.getCheckboxGroup('acao_licenca')[0];
+        const nomesDasAcoes = {
+            envio: 'Envio de licença',
+            troca: 'Troca de licença',
+            cancelamento: 'Cancelamento de licença'
+        };
+        const ticket = obterCampo(interaction, 'ticket');
+        const prioridade = interaction.fields.getCheckbox('prioridade');
+
+        const linhas = [
+            'Bom dia/Boa tarde',
+            '',
+            '**Solicitação de licença facial**'
+        ];
+
+        if (prioridade) {
+            linhas.push('', '# 🚨 PRIORIDADE 🚨', '', '**ATENDIMENTO PRIORITÁRIO SOLICITADO**');
+        }
+
+        linhas.push(
+            '',
+            `**Ação**: ${nomesDasAcoes[acaoSelecionada] || acaoSelecionada}`,
+            '',
+            `**Ticket**: ${ticket}`,
+            '',
+            `Solicitado por: <@${interaction.user.id}>`
+        );
+
+        return linhas.join('\n');
+    }
+
     if (tipo === 'modal_criacao_id_cloud') {
         const caseServico = obterCampo(interaction, 'case');
         return [
-            `Bom dia/Boa tarde <@&${suporteRoleId}>`,
+            'Bom dia/Boa tarde',
             '',
             'Por gentileza, criar este **iD Cloud**:',
             caseServico,
@@ -16,7 +58,7 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
     if (tipo === 'modal_criacao_secullum') {
         const caseServico = obterCampo(interaction, 'case');
         return [
-            `Bom dia/Boa tarde <@&${suporteRoleId}>`,
+            'Bom dia/Boa tarde',
             '',
             'Por gentileza, criar este **Secullum Comunicador**:',
             caseServico,
@@ -28,7 +70,7 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
     if (tipo === 'modal_criacao_acesso_nuvem') {
         const caseServico = obterCampo(interaction, 'case');
         return [
-            `Bom dia/Boa tarde <@&${suporteRoleId}>`,
+            'Bom dia/Boa tarde',
             '',
             'Por gentileza, criar este **Acesso Nuvem**:',
             caseServico,
@@ -40,8 +82,8 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
     if (tipo === 'modal_renovacao_registro') {
         const revenda = obterCampo(interaction, 'revenda');
         const linkCliente = obterCampo(interaction, 'link_cliente');
-        const dataValidade = obterCampo(interaction, 'data_validade');
-        const tipoRegistro = obterCampo(interaction, 'tipo_registro');
+        const dataValidade = formatarData(obterCampo(interaction, 'data_validade'));
+        const tipoRegistro = interaction.fields.getStringSelectValues('tipo_registro')[0];
         const observacoes = obterCampo(interaction, 'observacoes');
 
         const observacoesFormatadas = observacoes
@@ -49,7 +91,7 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
             : 'Técnico / Case / Ticket não informados';
 
         return [
-            `Bom dia/Boa tarde <@&${suporteRoleId}>`,
+            'Bom dia/Boa tarde',
             '',
             '**Renovação de registro**',
             '',
@@ -67,13 +109,40 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         ].join('\n');
     }
 
+    if (
+        tipo === 'modal_adicao_equipamento_acesso_nuvem' ||
+        tipo === 'modal_remocao_equipamento_acesso_nuvem'
+    ) {
+        const adicionando = tipo === 'modal_adicao_equipamento_acesso_nuvem';
+        const equipamento = obterCampo(interaction, 'equipamento');
+        const linkCliente = obterCampo(interaction, 'link_cliente');
+        const caseServico = obterCampo(interaction, 'case');
+        const ticket = obterCampo(interaction, 'ticket');
+
+        return [
+            'Bom dia/Boa tarde',
+            '',
+            adicionando ? '**Adicionar equipamento no Acesso Nuvem**' : '**Remover equipamento do Acesso Nuvem**',
+            '',
+            `**Nome e número do equipamento**: ${equipamento}`,
+            '',
+            `**Link**: ${linkCliente}`,
+            '',
+            `**Case**: ${caseServico}`,
+            '',
+            `**Ticket**: ${ticket}`,
+            '',
+            `Solicitado por: <@${interaction.user.id}>`
+        ].join('\n');
+    }
+
     if (tipo === 'modal_cancelamento_acesso_nuvem') {
         const linkCliente = obterCampo(interaction, 'link_cliente');
         const ticketCancelamento = obterCampo(interaction, 'ticket_cancelamento');
         const caseServicoDetalhe = obterCampo(interaction, 'case');
 
         return [
-            `Bom dia/Boa tarde <@&${suporteRoleId}>`,
+            'Bom dia/Boa tarde',
             '',
             '**Cancelamento de acesso nuvem**',
             '',
@@ -93,7 +162,7 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const equipamento = obterCampo(interaction, 'equipamento') || 'todos';
 
         return [
-            `Bom dia/Boa tarde <@&${suporteRoleId}>`,
+            'Bom dia/Boa tarde',
             '',
             '**Reinício de agente**',
             '',
@@ -107,13 +176,44 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         ].join('\n');
     }
 
+    if (
+        tipo === 'modal_adicao_equipamento_comunicador' ||
+        tipo === 'modal_cancelamento_equipamento_comunicador'
+    ) {
+        const adicionando = tipo === 'modal_adicao_equipamento_comunicador';
+        const revenda = obterCampo(interaction, 'revenda');
+        const banco = obterCampo(interaction, 'banco');
+        const equipamento = obterCampo(interaction, 'equipamento');
+        const portaServidor = adicionando ? null : obterCampo(interaction, 'porta_servidor');
+
+        const linhas = [
+            'Bom dia/Boa tarde',
+            '',
+            adicionando ? '**Adicionar equipamento no Comunicador**' : '**Cancelar equipamento no Comunicador**',
+            '',
+            `**Revenda**: ${revenda}`,
+            '',
+            `**Banco**: ${banco}`,
+            '',
+            `**Equipamento**: ${equipamento}`
+        ];
+
+        if (portaServidor) {
+            linhas.push('', `**Porta do servidor**: ${portaServidor}`);
+        }
+
+        linhas.push('', `Solicitado por: <@${interaction.user.id}>`);
+
+        return linhas.join('\n');
+    }
+
     if (tipo === 'modal_cancelamento_agente') {
         const banco = obterCampo(interaction, 'banco');
         const ticketCancelamento = obterCampo(interaction, 'ticket_cancelamento');
         const caseOriginal = obterCampo(interaction, 'case');
 
         return [
-            `Bom dia/Boa tarde <@&${suporteRoleId}>`,
+            'Bom dia/Boa tarde',
             '',
             '**Cancelamento de agente**',
             '',
@@ -134,7 +234,7 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const caseServicoDetalhe = obterCampo(interaction, 'case');
 
         const linhas = [
-            `Bom dia/Boa tarde <@&${suporteRoleId}>`,
+            'Bom dia/Boa tarde',
             '',
             'Por gentileza, cancelar este **iD Cloud**.',
             '',
@@ -159,7 +259,7 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const caseServicoDetalhe = obterCampo(interaction, 'case');
 
         return [
-            `Bom dia/Boa tarde <@&${suporteRoleId}>`,
+            'Bom dia/Boa tarde',
             '',
             'Por gentileza, adicionar os seguintes equipamentos neste **iD Cloud**:',
             '',
@@ -182,7 +282,7 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const caseServicoDetalhe = obterCampo(interaction, 'case');
 
         return [
-            `Bom dia/Boa tarde <@&${suporteRoleId}>`,
+            'Bom dia/Boa tarde',
             '',
             'Por gentileza, remover os seguintes equipamentos deste **iD Cloud**:',
             '',

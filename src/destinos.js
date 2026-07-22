@@ -24,8 +24,16 @@ async function resolverCanalDestino(client, destino) {
 
 function obterDestinoPorTipo(tipo, ENV) {
     switch (tipo) {
+        case 'modal_licenca_facial':
+            return {
+                nome: 'Licença Facial',
+                guildId: '',
+                channelId: ENV.CHANNEL_ID_LICENCA
+            };
         case 'modal_renovacao_registro':
         case 'modal_cancelamento_acesso_nuvem':
+        case 'modal_adicao_equipamento_acesso_nuvem':
+        case 'modal_remocao_equipamento_acesso_nuvem':
             return {
                 nome: 'Acesso Nuvem',
                 guildId: ENV.GUILD_ID_ACESSO_NUVEM,
@@ -33,6 +41,8 @@ function obterDestinoPorTipo(tipo, ENV) {
             };
         case 'modal_reinicio_agente':
         case 'modal_cancelamento_agente':
+        case 'modal_adicao_equipamento_comunicador':
+        case 'modal_cancelamento_equipamento_comunicador':
             return {
                 nome: 'Comunicador',
                 guildId: ENV.GUILD_ID_COMUNICADOR,

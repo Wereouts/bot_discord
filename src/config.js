@@ -2,7 +2,8 @@ require('dotenv').config();
 
 const variaveisObrigatorias = [
     'DISCORD_TOKEN',
-    'SUPORTE_ROLE_ID'
+    'SUPORTE_ROLE_ID',
+    'SUPORTE_LICENCA_ID'
 ];
 
 for (const variavel of variaveisObrigatorias) {
@@ -12,6 +13,8 @@ for (const variavel of variaveisObrigatorias) {
 }
 
 const ENV = {
+    CHANNEL_ID_LICENCA: (process.env.CHANNEL_ID_LICENCA || '').trim(),
+    SUPORTE_LICENCA_ID: (process.env.SUPORTE_LICENCA_ID || '').trim(),
     GUILD_ID_ACESSO_NUVEM: (process.env.GUILD_ID_ACESSO_NUVEM || '').trim(),
     CHANNEL_ID_ACESSO_NUVEM: (process.env.CHANNEL_ID_ACESSO_NUVEM || '').trim(),
     GUILD_ID_COMUNICADOR: (process.env.GUILD_ID_COMUNICADOR || '').trim(),
