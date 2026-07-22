@@ -27,8 +27,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const prioridade = interaction.fields.getCheckbox('prioridade');
 
         const linhas = [
-            'Bom dia/Boa tarde',
-            '',
             '**Solicitação de licença facial**'
         ];
 
@@ -51,8 +49,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
     if (tipo === 'modal_criacao_id_cloud') {
         const caseServico = obterCampo(interaction, 'case');
         return [
-            'Bom dia/Boa tarde',
-            '',
             'Por gentileza, criar este **iD Cloud**:',
             caseServico,
             '',
@@ -63,8 +59,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
     if (tipo === 'modal_criacao_secullum') {
         const caseServico = obterCampo(interaction, 'case');
         return [
-            'Bom dia/Boa tarde',
-            '',
             'Por gentileza, criar este **Secullum Comunicador**:',
             caseServico,
             '',
@@ -75,8 +69,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
     if (tipo === 'modal_criacao_acesso_nuvem') {
         const caseServico = obterCampo(interaction, 'case');
         return [
-            'Bom dia/Boa tarde',
-            '',
             'Por gentileza, criar este **Acesso Nuvem**:',
             caseServico,
             '',
@@ -96,8 +88,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
             : 'Técnico / Case / Ticket não informados';
 
         return [
-            'Bom dia/Boa tarde',
-            '',
             '**Renovação de registro**',
             '',
             `**Revenda**: ${revenda}`,
@@ -125,8 +115,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const ticket = obterCampo(interaction, 'ticket');
 
         return [
-            'Bom dia/Boa tarde',
-            '',
             adicionando ? '**Adicionar equipamento no Acesso Nuvem**' : '**Remover equipamento do Acesso Nuvem**',
             '',
             `**Nome e número do equipamento**: ${equipamento}`,
@@ -147,8 +135,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const caseServicoDetalhe = obterCampo(interaction, 'case');
 
         return [
-            'Bom dia/Boa tarde',
-            '',
             '**Cancelamento de acesso nuvem**',
             '',
             `**Link do cliente**: ${linkCliente}`,
@@ -167,8 +153,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const equipamento = obterCampo(interaction, 'equipamento') || 'todos';
 
         return [
-            'Bom dia/Boa tarde',
-            '',
             '**Reinício de agente**',
             '',
             `**Banco**: ${banco}`,
@@ -192,8 +176,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const portaServidor = adicionando ? null : obterCampo(interaction, 'porta_servidor');
 
         const linhas = [
-            'Bom dia/Boa tarde',
-            '',
             adicionando ? '**Adicionar equipamento no Comunicador**' : '**Cancelar equipamento no Comunicador**',
             '',
             `**Revenda**: ${revenda}`,
@@ -218,8 +200,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const caseOriginal = obterCampo(interaction, 'case');
 
         return [
-            'Bom dia/Boa tarde',
-            '',
             '**Cancelamento de agente**',
             '',
             `**Banco**: ${banco}`,
@@ -239,8 +219,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const caseServicoDetalhe = obterCampo(interaction, 'case');
 
         const linhas = [
-            'Bom dia/Boa tarde',
-            '',
             'Por gentileza, cancelar este **iD Cloud**.',
             '',
             `**Banco:** ${banco}`,
@@ -264,8 +242,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const caseServicoDetalhe = obterCampo(interaction, 'case');
 
         return [
-            'Bom dia/Boa tarde',
-            '',
             'Por gentileza, adicionar os seguintes equipamentos neste **iD Cloud**:',
             '',
             formatarEquipamentos(equipamentos),
@@ -287,8 +263,6 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const caseServicoDetalhe = obterCampo(interaction, 'case');
 
         return [
-            'Bom dia/Boa tarde',
-            '',
             'Por gentileza, remover os seguintes equipamentos deste **iD Cloud**:',
             '',
             formatarEquipamentos(equipamentos),
