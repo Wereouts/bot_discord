@@ -30,7 +30,7 @@ async function safeShowModal(interaction, modal) {
     try {
         return await interaction.showModal(modal);
     } catch (err) {
-        debug('safeShowModal error:', err && err.code ? `${err.code} ${err.message}` : err);
+        console.error('Erro ao exibir modal:', err);
         return null;
     }
 }

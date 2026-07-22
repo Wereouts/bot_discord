@@ -151,6 +151,11 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
         const banco = obterCampo(interaction, 'banco');
         const revenda = obterCampo(interaction, 'revenda');
         const equipamento = obterCampo(interaction, 'equipamento') || 'todos';
+        const verificacaoWebService = interaction.fields
+            .getCheckboxGroup('verificacao_web_service')[0];
+        const statusVerificacao = verificacaoWebService === 'sim'
+            ? 'Sim, foi verificado'
+            : 'Não foi verificado';
 
         return [
             '**Reinício de agente**',
@@ -160,6 +165,8 @@ function criarMensagemSolicitacao(interaction, tipo, suporteRoleId) {
             `**Revenda**: ${revenda}`,
             '',
             `**Equipamento**: ${equipamento}`,
+            '',
+            `**Configurações do Web Service verificadas**: ${statusVerificacao}`,
             '',
             `Solicitado por: <@${interaction.user.id}>`
         ].join('\n');

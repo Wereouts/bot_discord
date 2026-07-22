@@ -39,6 +39,20 @@ function criarCampo({
     return campo;
 }
 
+/** Cria um campo de texto dentro do componente Label usado pelos modais atuais. */
+function criarCampoComLabel({ id, titulo, placeholder, obrigatorio = true }) {
+    const campo = new TextInputBuilder()
+        .setCustomId(id)
+        .setPlaceholder(placeholder)
+        .setStyle(TextInputStyle.Short)
+        .setRequired(obrigatorio)
+        .setMaxLength(1000);
+
+    return new LabelBuilder()
+        .setLabel(titulo)
+        .setTextInputComponent(campo);
+}
+
 /** Agrupa campos de texto em linhas e os adiciona ao modal informado. */
 function adicionarCamposAoModal(modal, campos) {
     const linhas = campos.map(campo => new ActionRowBuilder().addComponents(campo));
@@ -322,23 +336,45 @@ function criarModal(tipo) {
                 .setCustomId('modal_reinicio_agente')
                 .setTitle('Reinício de agente');
 
-            return adicionarCamposAoModal(modal, [
-                criarCampo({
+            modal.addLabelComponents(
+                criarCampoComLabel({
                     id: 'banco',
                     titulo: 'Banco',
                     placeholder: 'Exemplo: 49788 - SARTOR INTERNET LTDA'
                 }),
-                criarCampo({
+                criarCampoComLabel({
                     id: 'revenda',
                     titulo: 'Revenda',
                     placeholder: 'Exemplo: Casa do Computador'
                 }),
-                criarCampo({
+                criarCampoComLabel({
                     id: 'equipamento',
                     titulo: 'Equipamento',
                     placeholder: 'Informe o equipamento ou todos'
                 })
-            ]);
+            );
+
+            const verificacaoWebService = new CheckboxGroupBuilder()
+                .setCustomId('verificacao_web_service')
+                .addOptions(
+                    new CheckboxGroupOptionBuilder()
+                        .setLabel('Sim, foi verificado')
+                        .setValue('sim'),
+                    new CheckboxGroupOptionBuilder()
+                        .setLabel('Não foi verificado')
+                        .setValue('nao')
+                )
+                .setMinValues(1)
+                .setMaxValues(1)
+                .setRequired(true);
+
+            const labelVerificacao = new LabelBuilder()
+                .setLabel('Verificou o Web Service e o Ponto Web?')
+                .setDescription('Dúvidas: https://secullum.sharepoint.com/sites/kbsuporte/SitePages/SUPORTEVM.aspx')
+                .setCheckboxGroupComponent(verificacaoWebService);
+
+            modal.addLabelComponents(labelVerificacao);
+            return modal;
         }
 
         case 'adicao_equipamento_comunicador': {

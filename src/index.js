@@ -181,6 +181,10 @@ client.on('interactionCreate', async interaction => {
             const showResult = await safeShowModal(interaction, modal);
             if (!showResult) {
                 debug('Failed to show modal, aborting select interaction:', interaction.id);
+                await safeReply(interaction, {
+                    content: 'Não foi possível abrir o formulário. Tente novamente em alguns instantes.',
+                    flags: MessageFlags.Ephemeral
+                });
             }
             return;
         }
