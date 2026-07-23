@@ -4,6 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:restart": "pm2 restart bot-discord-suporte",
+    "pm2:stop": "pm2 stop bot-discord-suporte",
+    "pm2:logs": "pm2 logs bot-discord-suporte",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
