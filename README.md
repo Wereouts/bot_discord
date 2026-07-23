@@ -1,416 +1,267 @@
-# Entrypoints do Bot
+# 🤖 Bot de Solicitações para Discord
 
-## Visão geral
+Bot desenvolvido para padronizar e automatizar o envio de solicitações técnicas através de um comando no Discord.
 
-O processo possui dois pontos de entrada encadeados.
-
-- **`index.js`** atua como bootstrap mínimo: carrega `src/index.js` e transfere a execução para o entrypoint operacional.
-- **`src/index.js`** compõe o cliente Discord, registra os handlers de interação, inicializa os mecanismos de deduplicação e realiza o login usando `process.env.DISCORD_TOKEN`.
-
-A composição é síncrona na entrada e assíncrona no processamento das interações:
-
-- O carregamento de `src/index.js` configura o processo.
-- Os eventos `ready` e `interactionCreate` conduzem a execução do bot após a inicialização do cliente.
+O objetivo é reduzir erros de preenchimento, manter um padrão nas solicitações e agilizar o atendimento da equipe responsável.
 
 ---
 
-## Encadeamento dos entrypoints
+## ✨ Funcionalidades
 
-```mermaid
-flowchart TD
-    A[index.js]
-    B[src/index.js]
-    C[Cliente discord.js]
-    D[Eventos ready e interactionCreate]
-    E[Fluxo de solicitação]
-    F[Login com DISCORD_TOKEN]
-
-    A -->|carrega| B
-    B -->|cria| C
-    B -->|registra| D
-    B -->|configura| E
-    B -->|executa| F
-    C -->|dispara| D
-```
-
-O relacionamento entre os arquivos é explícito em `index.js`, que executa:
-
-```js
-require('./src/index.js');
-```
-
-Não há outra passagem de controle demonstrada entre os dois arquivos: toda a lógica de inicialização e operação está concentrada em `src/index.js`.
+- ✅ Comando `/solicitar`
+- ✅ Formulário interativo (Modal)
+- ✅ Campos obrigatórios
+- ✅ Mensagens padronizadas
+- ✅ Embeds organizados
+- ✅ Menção automática ao cargo de suporte
+- ✅ Evita solicitações incompletas
 
 ---
 
-# Entrypoint raiz
+# 📋 Como utilizar
 
-## `index.js`
-
-> **Visibilidade:** `public`  
-> **Tipo:** `function`
-
-Ponto de entrada raiz que carrega o entrypoint operacional em `src/index.js`.
-
-### Operação executada
-
-```js
-require('./src/index.js');
-```
-
-Esse arquivo possui apenas essa responsabilidade.
-
-Ele **não**:
-
-- cria o cliente Discord;
-- registra eventos;
-- executa `client.login()`.
-
-Todas essas responsabilidades pertencem a `src/index.js`.
-
----
-
-# Entrypoint operacional
-
-## `src/index.js`
-
-> **Visibilidade:** `public`  
-> **Tipo:** `function`
-
-Inicializa o cliente Discord, registra os eventos do bot, processa comandos, menus e modais, controla a deduplicação em memória e inicia o login.
-
----
-
-## Importações e composição
-
-`src/index.js` importa os seguintes recursos:
-
-### Bibliotecas
-
-- `Client`
-- `GatewayIntentBits`
-- `ActionRowBuilder`
-- `StringSelectMenuBuilder`
-- `StringSelectMenuOptionBuilder`
-- `EmbedBuilder`
-- `MessageFlags`
-
-(importados de **discord.js**)
-
-Além disso:
-
-- `crypto`, utilizado para calcular a impressão digital (hash) das mensagens.
-
-### Módulos internos
-
-#### `./config`
-
-- `ENV`
-
-#### `./utils`
-
-- `debug`
-- `safeReply`
-- `safeShowModal`
-- `safeDeferReply`
-
-#### `./modals`
-
-- `criarModal`
-
-#### `./menu`
-
-- `obterOpcoesDoCanal`
-
-#### `./destinos`
-
-- `obterDestinoPorTipo`
-- `resolverCanalDestino`
-
-#### `./formatter`
-
-- `criarMensagemSolicitacao`
-
-Esses módulos são pontos de delegação do entrypoint. O código de `src/index.js` utiliza suas funções exportadas, enquanto toda a inicialização permanece centralizada nesse arquivo.
-
----
-
-## Criação do cliente
-
-O cliente Discord é criado utilizando apenas a intent `Guilds`:
-
-```js
-const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
-});
-```
-
-Durante as respostas ao usuário também é utilizado:
-
-```js
-MessageFlags.Ephemeral
-```
-
-para mensagens efêmeras.
-
----
-
-## Estado de inicialização e deduplicação
-
-`src/index.js` mantém dois mapas em memória:
-
-- `processedInteractions`
-  - registra IDs de interações já processadas.
-
-- `recentSends`
-  - registra chaves de envio formadas pelo canal e pelo hash da mensagem.
-
-### Tempos de retenção
-
-| Constante | Valor |
-|-----------|------:|
-| `CLEANUP_INTERVAL_MS` | `30_000` |
-| `INTERACTION_RETENTION_MS` | `30_000` |
-| `SEND_RETENTION_MS` | `60_000` |
-
-A função `cleanupCaches()` remove entradas expiradas.
-
-Ela é executada através de:
-
-```js
-setInterval(...)
-```
-
-e recebe:
-
-```js
-.unref()
-```
-
-evitando que o timer mantenha o processo ativo sozinho.
-
----
-
-# Registro de eventos
-
-## Evento `ready`
-
-Registrado utilizando:
-
-```js
-client.once(...)
-```
-
-Ao conectar, registra uma mensagem semelhante a:
-
-```text
-Bot conectado como <bot.user.tag>
-```
-
-Esse evento é executado apenas uma vez.
-
----
-
-## Evento `interactionCreate`
-
-Registrado utilizando:
-
-```js
-client.on(...)
-```
-
-Esse handler concentra praticamente toda a lógica funcional do bot.
-
----
-
-# Fluxo do comando `/solicitar`
-
-Quando a interação corresponde ao comando:
+Digite no canal autorizado:
 
 ```text
 /solicitar
 ```
 
-o entrypoint:
+Será aberto um formulário para preenchimento.
 
-1. Obtém as opções através de:
+Após preencher todas as informações, clique em **Enviar**.
 
-```js
-obterOpcoesDoCanal(interaction, ENV)
-```
-
-2. Cria um `StringSelectMenuBuilder` com ID:
-
-```text
-menu_solicitacao
-```
-
-3. Converte cada opção em `StringSelectMenuOptionBuilder`.
-
-4. Adiciona o menu a uma `ActionRowBuilder`.
-
-5. Cria um `EmbedBuilder` com o título:
-
-```text
-Solicitações do bot
-```
-
-6. Responde utilizando:
-
-```js
-safeReply(...)
-```
-
-com:
-
-```js
-MessageFlags.Ephemeral
-```
-
-Caso `safeReply()` retorne um valor falso, o processamento é encerrado após registrar uma mensagem de depuração.
+O bot publicará automaticamente uma solicitação organizada no canal configurado.
 
 ---
 
-# Fluxo do menu `menu_solicitacao`
+# 📝 Informações solicitadas
 
-Quando:
+Dependendo do tipo de solicitação, poderão ser solicitados campos como:
 
-```text
-customId === "menu_solicitacao"
-```
+- Técnico responsável
+- Link da Case
+- Número do Ticket
+- Banco
+- Empresa
+- Equipamento
+- Observações
 
-o código:
-
-1. lê:
-
-```js
-interaction.values[0]
-```
-
-2. chama:
-
-```js
-criarModal(...)
-```
-
-Se nenhum modal for criado:
+Exemplo:
 
 ```text
-Tipo de solicitação inválido.
+Técnico:
+William
+
+Link:
+https://...
+
+Ticket:
+253781
 ```
-
-Caso contrário:
-
-```js
-safeShowModal(...)
-```
-
-é utilizado para apresentar o modal ao usuário.
 
 ---
 
-# Fluxo da submissão de modal
+# 📨 Exemplo de saída
 
-Quando:
+O bot enviará uma mensagem semelhante a:
+
+> 📌 Nova Solicitação
+>
+> **Tipo:** Criação
+>
+> **Técnico:** William
+>
+> **Ticket:** 253781
+>
+> **Case:** https://...
+>
+> **Banco:** Empresa X
+>
+> @Suporte
+
+---
+
+# 🚀 Instalação
+
+## 1. Clone o repositório
+
+```bash
+git clone https://github.com/Wereouts/bot_discord.git
+```
+
+---
+
+## 2. Entre na pasta
+
+```bash
+cd bot_discord
+```
+
+---
+
+## 3. Instale as dependências
+
+```bash
+npm install
+```
+
+---
+
+## 4. Configure o arquivo `.env`
+
+Exemplo:
+
+```env
+DISCORD_TOKEN=SEU_TOKEN
+CLIENT_ID=SEU_CLIENT_ID
+GUILD_ID=SEU_SERVIDOR
+CHANNEL_ID=CANAL_DESTINO
+SUPORTE_ROLE_ID=CARGO_SUPORTE
+```
+
+---
+
+## 5. Registrar os comandos
+
+Execute apenas uma vez (ou quando alterar comandos):
+
+```bash
+node registrar-comandos.js
+```
+
+---
+
+## 6. Iniciar o bot
+
+```bash
+node index.js
+```
+
+ou
+
+```bash
+npm start
+```
+
+(se configurado no `package.json`)
+
+---
+
+# ⚙️ Requisitos
+
+- Node.js 20 ou superior
+- Bot criado no Discord Developer Portal
+- Permissão para registrar Slash Commands
+- Permissão para enviar mensagens no canal
+
+---
+
+# 🔑 Permissões necessárias
+
+O bot deve possuir, no mínimo:
+
+- Ver canais
+- Enviar mensagens
+- Incorporar links (Embed Links)
+- Usar comandos de aplicativo
+- Mencionar cargos (caso utilize)
+
+---
+
+# 📂 Estrutura do projeto
 
 ```text
-customId começa com "modal_"
+bot_discord/
+│
+├── src/
+├── index.js
+├── registrar-comandos.js
+├── package.json
+├── .env
+└── README.md
 ```
-
-o entrypoint executa:
-
-1. `safeDeferReply()`;
-2. obtém o destino usando `obterDestinoPorTipo()`;
-3. valida `channelId`;
-4. resolve o canal através de `resolverCanalDestino()`;
-5. verifica se o canal existe e aceita mensagens;
-6. gera a mensagem usando `criarMensagemSolicitacao()`;
-7. calcula um hash MD5 contendo:
-   - canal;
-   - tipo;
-   - autor;
-   - mensagem;
-8. monta `sendKey`;
-9. evita envios duplicados consultando `recentSends`;
-10. envia a mensagem utilizando `allowedMentions`;
-11. edita a resposta com o link da mensagem enviada.
 
 ---
 
-# Inicialização do login
-
-Ao final de `src/index.js` é executado:
-
-```js
-client.login(process.env.DISCORD_TOKEN);
-```
-
-O token é obtido diretamente das variáveis de ambiente.
-
-A variável:
+# 💡 Fluxo de utilização
 
 ```text
-SUPORTE_ROLE_ID
+Usuário
+   │
+   ▼
+/solicitar
+   │
+   ▼
+Formulário
+   │
+   ▼
+Validação
+   │
+   ▼
+Embed
+   │
+   ▼
+Canal de Solicitações
+   │
+   ▼
+Equipe de Suporte
 ```
-
-também é lida de `process.env` durante a construção de `allowedMentions` e da mensagem enviada.
 
 ---
 
-# Tratamento de erros
+# ❓ Problemas comuns
 
-> **⚠️ Atenção**
+## O comando não aparece
 
-O entrypoint depende das seguintes variáveis de ambiente:
+Execute novamente:
 
-- `DISCORD_TOKEN`
-- `SUPORTE_ROLE_ID`
-
-Esses valores **não** são definidos em `index.js` nem em `src/index.js`. Eles precisam existir antes da inicialização do processo.
-
-Todo o processamento de `interactionCreate` está protegido por:
-
-```js
-try {
-    ...
-} catch (err) {
-    ...
-}
+```bash
+node registrar-comandos.js
 ```
-
-O tratamento executa:
-
-- ignora os erros Discord `10062` e `40060`, registrando apenas `debug`;
-- envia outros erros para:
-
-```js
-console.error(...)
-```
-
-- caso a interação já tenha sido respondida, utiliza:
-
-```js
-interaction.editReply(...)
-```
-
-- caso contrário, tenta responder com uma mensagem efêmera;
-- eventuais falhas ao notificar o usuário são capturadas separadamente e registradas no console.
-
-Esse fluxo mantém o erro dentro do ciclo da própria interação e evita que uma falha de notificação substitua o erro original.
 
 ---
 
-# Inventário dos módulos internos utilizados
+## Erro 401 Unauthorized
 
-O entrypoint depende dos seguintes módulos:
+Verifique se o `DISCORD_TOKEN` está correto.
 
-| Módulo | Responsabilidade |
-|---------|------------------|
-| `./config` | fornece `ENV` |
-| `./utils` | fornece `debug`, `safeReply`, `safeShowModal` e `safeDeferReply` |
-| `./modals` | fornece `criarModal` |
-| `./menu` | fornece `obterOpcoesDoCanal` |
-| `./destinos` | fornece `obterDestinoPorTipo` e `resolverCanalDestino` |
-| `./formatter` | fornece `criarMensagemSolicitacao` |
+> O Token **não é** o link de convite do bot.
 
-O comportamento interno desses módulos não faz parte desta documentação. Aqui eles são apresentados apenas pelas funções efetivamente importadas e utilizadas durante a inicialização e o processamento das interações.
+---
+
+## Missing Access
+
+Verifique se:
+
+- o bot está no servidor;
+- possui permissões;
+- o `CLIENT_ID`;
+- o `GUILD_ID`.
+
+---
+
+## O bot não envia mensagens
+
+Confira:
+
+- `CHANNEL_ID`
+- permissões do canal
+- cargo do bot
+
+---
+
+# 🛠 Tecnologias utilizadas
+
+- Node.js
+- discord.js
+- dotenv
+
+---
+
+# 📄 Licença
+
+Este projeto é disponibilizado para uso interno e pode ser adaptado conforme a necessidade da equipe.
+
+---
+
+Desenvolvido para facilitar o gerenciamento de solicitações através do Discord.
